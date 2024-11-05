@@ -4,8 +4,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/cucumber/godog"
+	"runtime"
+	"time"
 )
 
 func getVersion(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +16,43 @@ func getVersion(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		Version string `json:"version"`
-	}{Version: godog.Version}
+	}{Version: runtime.Version()}
+
+	ok(w, data)
+}
+
+func getTimeStampInRequiredFormat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		fail(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract time and format from query parameters
+	timeParam := r.URL.Query().Get("time")
+	formatParam := r.URL.Query().Get("format")
+
+	var t time.Time
+	var err error
+
+	// If time parameter is provided, parse it
+	if timeParam != "" {
+		t, err = time.Parse(time.RFC3339, timeParam)
+		if err != nil {
+			fail(w, "Invalid time format", http.StatusBadRequest)
+			return
+		}
+	} else {
+		t = time.Now()
+	}
+
+	// If format parameter is not provided, use RFC3339
+	if formatParam == "" {
+		formatParam = time.RFC3339
+	}
+
+	data := struct {
+		TimeStamp string `json:"timestamp"`
+	}{TimeStamp: t.Format(formatParam)}
 
 	ok(w, data)
 }
@@ -48,5 +84,6 @@ func ok(w http.ResponseWriter, data interface{}) {
 
 func main() {
 	http.HandleFunc("/version", getVersion)
+	http.HandleFunc("/timestamp", getTimeStampInRequiredFormat)
 	http.ListenAndServe(":8080", nil)
 }

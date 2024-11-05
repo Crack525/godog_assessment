@@ -87,6 +87,27 @@ func TestFeatures(t *testing.T) {
 	}
 }
 
+func (a *apiFeature) iSendRequestToWithTimeAndFormat(method, endpoint, time, format string) (err error) {
+	req, err := http.NewRequest(method, endpoint, nil)
+	if err != nil {
+		return
+	}
+	q := req.URL.Query()
+	q.Add("time", time)
+	q.Add("format", format)
+	req.URL.RawQuery = q.Encode()
+
+	fmt.Println("Received time:", time, "and format:", format)
+
+	switch endpoint {
+	case "/timestamp":
+		getTimeStampInRequiredFormat(a.resp, req)
+	default:
+		err = fmt.Errorf("unknown endpoint: %s", endpoint)
+	}
+	return
+}
+
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	api := &apiFeature{}
 
@@ -97,4 +118,5 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I send "(GET|POST|PUT|DELETE)" request to "([^"]*)"$`, api.iSendrequestTo)
 	ctx.Step(`^the response code should be (\d+)$`, api.theResponseCodeShouldBe)
 	ctx.Step(`^the response should match json:$`, api.theResponseShouldMatchJSON)
+	ctx.Step(`^I send "(GET|POST|PUT|DELETE)" request to "([^"]*)" with time "([^"]*)" and format "([^"]*)"$`, api.iSendRequestToWithTimeAndFormat)
 }

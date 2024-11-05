@@ -1,7 +1,6 @@
 # file: version.feature
 Feature: get version
-  In order to know godog version
-  As an API user
+  In order to know running go version
   I need to be able to request version
 
   Scenario: does not allow POST method
@@ -20,6 +19,6 @@ Feature: get version
     And the response should match json:
       """
       {
-        "version": "v0.0.0-dev"
+        "version": "go1.22.0"
       }
       """
