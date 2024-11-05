@@ -32,6 +32,7 @@ func getTimeStampInRequiredFormat(w http.ResponseWriter, r *http.Request) {
 	formatParam := r.URL.Query().Get("format")
 
 	var t time.Time
+	var format string
 	var err error
 
 	// If time parameter is provided, parse it
@@ -47,12 +48,14 @@ func getTimeStampInRequiredFormat(w http.ResponseWriter, r *http.Request) {
 
 	// If format parameter is not provided, use RFC3339
 	if formatParam == "" {
-		formatParam = time.RFC3339
+		format = time.RFC3339
+	} else {
+		format = formatParam
 	}
 
 	data := struct {
 		TimeStamp string `json:"timestamp"`
-	}{TimeStamp: t.Format(formatParam)}
+	}{TimeStamp: t.Format(format)}
 
 	ok(w, data)
 }

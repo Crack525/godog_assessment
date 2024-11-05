@@ -76,7 +76,7 @@ func TestFeatures(t *testing.T) {
 	suite := godog.TestSuite{
 		ScenarioInitializer: InitializeScenario,
 		Options: &godog.Options{
-			Format:   "pretty",
+			Format:   "pretty,cucumber:./report/cucumber.json",
 			Paths:    []string{"features"},
 			TestingT: t, // Testing instance that will run subtests.
 		},
