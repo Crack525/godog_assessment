@@ -1,291 +1,157 @@
-# An example of API feature
 
-The following example demonstrates steps how we describe and test our API using **godog**.
+# Welcome
+Dear interviewee, 
 
-### Step 1
+With this exercise we want to give you the opportunity to demonstrate your problem solving and programming skills. In the exercise you will be using Go lang and Cucumber/Gherkin/GoDog, however, experience in any of those is not required to solve the exercise. A working Git setup and basic Git knowledge is required.
 
-Describe our feature. Imagine we need a REST API with `json` format. Lets from the point, that
-we need to have a `/version` endpoint, which responds with a version number. We also need to manage
-error responses.
+In the interview, you will be asked to present your solution and how you approached the tasks.
 
-``` gherkin
-# file: version.feature
-Feature: get version
-  In order to know godog version
-  As an API user
-  I need to be able to request version
+We send it to you 24h before our interview and designed this exercise to take about 2 hours.
+It is in the best interest of both you and us that you are honest about how easy or difficult this exercise was for you and how much time you actually needed. 
+Note that the exercise is not just about getting the right results, but also about your thought process and how you communicate your ideas. Don't feel pressured to invest much more than the intended 2 hours. 
 
-  Scenario: does not allow POST method
-    When I send "POST" request to "/version"
-    Then the response code should be 405
-    And the response should match json:
-      """
-      {
-        "error": "Method not allowed"
-      }
-      """
+You can choose your favourite editor. We recommend and successfully tested this exercise with Visual Studio Code.
 
-  Scenario: should get version number
-    When I send "GET" request to "/version"
-    Then the response code should be 200
-    And the response should match json:
-      """
-      {
-        "version": "v0.0.0-dev"
-      }
-      """
+**Good luck!**
+
+
+# Preparations
+
+
+## Go lang
+If you do not have Go Lang, you need to install it for this exercise
+* Follow the official [Go Installation Instructions](https://go.dev/doc/install)
+* Follow the instructions for a [Hello World program in Go](https://go.dev/doc/tutorial/getting-started#code)
+* **Make sure that you can successfully run your hello world application** using `go run .` in the command line 
+
+## Cucumber and Godog
+Do you know Cucumber? It's a framework that enables writing tests in a BDD-style (BDD = Behavior-Driven-Development).
+You don't need a deep understanding of BDD or Cucumber for this exercise. However, if you are new to Cucumber you 
+may read [this overview](https://cucumber.io/docs/guides/overview/) for some context.
+
+Cucumber tests are written in *Gherkin* syntax. It has a simple structure, focusing on the business case when writing tests. 
+
+*Godog* is the framework for using Cucumber in Golang.
+
+Using Godog/Cucumber, one can write human-readable ***Test Scenarios*** in Gherkin. The test steps are 
+linked to ***Step Definitions*** written in Go, which call the application code of your **System Under Test (SUT)**.
+
+![Figure 1](figure1.png)
+
+
+We created a **fork of the Godog repository**: https://github.com/slrongji/godog which you will be using in this exercise. 
+
+
+# Simple Godog example
+* Clone the [godog fork](https://github.com/slrongji/godog)
+* Create an own branch for your changes
+  * Through the exercise, you may commit to your branch to document and save your progress
+* In your checkout folder, navigate to `_examples/godogs`
+* Run `go test` and inspect the terminal output
+* You should see that 4 test Scenarios with 12 steps were executed and passed
+* Find the Gherkin .feature-files and take a look. This is where you can define more tests.
+  * Add a test that starts with 20 godogs, eats 13, and expects 7 remaining 
+
+
+## Gherkin Scenario Outlines
+* Experiment with Gherkin "Scenario Outlines". They allow you to avoid redundant code in your .feature files
+* In file `godogs.feature`, replace the first scenario with an scenario outline:
+```
+  Scenario Outline: Valid examples for
+    Given there are <INITIAL> godogs
+    When I eat <EAT>
+    Then there should be <REMAINING> remaining
+
+    Examples:
+      | INITIAL | EAT | REMAINING |
+      | 12      | 5   | 7         |
+      | 20      | 10  | 10        |
+```
+* Rerun the test and confirm that everything works
+* Add some more reasonable examples
+
+
+# HTTP Server Example
+* In your checkout folder, navigate to `_examples/api` and open `api.go`
+* This is a simple HTTP server with two endpoints, accepting GET requests
+* Gherkin tests for both endpoints exist in the `features` folder
+  * As before, you can run them with `go test`
+
+## Version endpoint
+This endpoint simply returns the go version of the server.
+* Start the server (best to use a separate terminal) with `go api.go`
+* Run the tests and make the tests for the version endpoint pass.
+  * It is likely that you have to adjust the expected test result to match your Go lang installation
+
+## Timestamp endpoint
+1) The timestamp endpoint can convert a timestamp like `2023-12-01T10:02:01Z` into other (date-only) formats using two parameters:
+    * The timestamp
+    * The target format
+2) If an empty string is provided as format param, the time should be returned using the original format in the response
+3) If an unsupported of wrong format is given, an error should be returned
+
+Supported formats are
+```
+	"2006-01-02",  // ISO 8601 date format
+	"02-Jan-2006", // Common date format
+	"Jan 2, 2006", // Another common date format
+	"02/01/2006",  // European date format
+	"01/02/2006",  // US date format
 ```
 
-Save it as `features/version.feature`.
-Now we have described a success case and an error when the request method is not allowed.
+The implementation is based on the [Time.Format go package](https://pkg.go.dev/time)
 
-### Step 2
+### Test existing implementation
+Requirements 1 and 2 should be implemented already
+* Run the tests and assure that all tests pass
+* Add 2-3 more test scenarios to provide more coverage 
 
-Execute `godog run`. You should see the following result, which says that all of our
-steps are yet undefined and provide us with the snippets to implement them.
 
-![Screenshot](https://raw.github.com/cucumber/godog/master/_examples/api/screenshots/undefined.png)
+### Test all valid formats
+* Please extend the timestamp endpoint tests to cover all valid formats
+* Try to avoid heavily redundant code
 
-### Step 3
 
-Lets copy the snippets to `api_test.go` and modify it for our use case. Since we know that we will
-need to store state within steps (a response), we should introduce a structure with some variables.
+### Extend implementation and test it
+* Please implement Requirement 3 of the endpoint
+  * Extend the HTTP server implementation
+  * Use the provided **implementation help** below
+  * Assure that everything compiles and you can run the server
+* If helpful, you can also use `curl` to query / test your endpoints, e.g.:
+  ```sh
+  curl "http://localhost:8080/timestamp?time=2023-12-01T10:02:01Z&format=2010-12-14"
+  ```
+* Extend the timestamp endpoint tests to test requirement 3
 
-``` go
-// file: api_test.go
-package main
-
-import (
-	"github.com/cucumber/godog"
-)
-
-type apiFeature struct {
-}
-
-func (a *apiFeature) iSendrequestTo(method, endpoint string) error {
-	return godog.ErrPending
-}
-
-func (a *apiFeature) theResponseCodeShouldBe(code int) error {
-	return godog.ErrPending
-}
-
-func (a *apiFeature) theResponseShouldMatchJSON(body *godog.DocString) error {
-	return godog.ErrPending
-}
-
-func TestFeatures(t *testing.T) {
-  suite := godog.TestSuite{
-    ScenarioInitializer: InitializeScenario,
-    Options: &godog.Options{
-      Format:   "pretty",
-      Paths:    []string{"features"},
-      TestingT: t, // Testing instance that will run subtests.
-    },
-  }
-
-  if suite.Run() != 0 {
-    t.Fatal("non-zero status returned, failed to run feature tests")
-  }
-}
-
-func InitializeScenario(s *godog.ScenarioContext) {
-	api := &apiFeature{}
-	s.Step(`^I send "([^"]*)" request to "([^"]*)"$`, api.iSendrequestTo)
-	s.Step(`^the response code should be (\d+)$`, api.theResponseCodeShouldBe)
-	s.Step(`^the response should match json:$`, api.theResponseShouldMatchJSON)
+#### Implementation help
+You can define the valid formats in an array
+```Go
+var validFormatParams = []string{
+	"2006-01-02",  // ISO 8601 date format
+	...
 }
 ```
 
-### Step 4
-
-Now we can implement steps, since we know what behavior we expect:
-
-``` go
-// file: api_test.go
-package main
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"reflect"
-	"testing"
-
-	"github.com/cucumber/godog"
-)
-
-type apiFeature struct {
-	resp *httptest.ResponseRecorder
-}
-
-func (a *apiFeature) resetResponse(*godog.Scenario) {
-	a.resp = httptest.NewRecorder()
-}
-
-func (a *apiFeature) iSendrequestTo(method, endpoint string) (err error) {
-	req, err := http.NewRequest(method, endpoint, nil)
-	if err != nil {
-		return
-	}
-
-	// handle panic
-	defer func() {
-		switch t := recover().(type) {
-		case string:
-			err = fmt.Errorf(t)
-		case error:
-			err = t
+You can use this function to return a valid format based on a given format parameter, and return an error if the format is not supported:
+```Go
+func getFormat(formatParam string) (string, error) {
+	for _, f := range validFormatParams {
+		if _, err := time.Parse(f, formatParam); err == nil {
+			return layout, nil
 		}
-	}()
-
-	switch endpoint {
-	case "/version":
-		getVersion(a.resp, req)
-	default:
-		err = fmt.Errorf("unknown endpoint: %s", endpoint)
 	}
-	return
-}
-
-func (a *apiFeature) theResponseCodeShouldBe(code int) error {
-	if code != a.resp.Code {
-		return fmt.Errorf("expected response code to be: %d, but actual is: %d", code, a.resp.Code)
-	}
-	return nil
-}
-
-func (a *apiFeature) theResponseShouldMatchJSON(body *godog.DocString) (err error) {
-	var expected, actual interface{}
-
-	// re-encode expected response
-	if err = json.Unmarshal([]byte(body.Content), &expected); err != nil {
-		return
-	}
-
-	// re-encode actual response too
-	if err = json.Unmarshal(a.resp.Body.Bytes(), &actual); err != nil {
-		return
-	}
-
-	// the matching may be adapted per different requirements.
-	if !reflect.DeepEqual(expected, actual) {
-		return fmt.Errorf("expected JSON does not match actual, %v vs. %v", expected, actual)
-	}
-	return nil
-}
-
-func TestFeatures(t *testing.T) {
-	suite := godog.TestSuite{
-		ScenarioInitializer: InitializeScenario,
-		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"features"},
-			TestingT: t, // Testing instance that will run subtests.
-		},
-	}
-
-	if suite.Run() != 0 {
-		t.Fatal("non-zero status returned, failed to run feature tests")
-	}
-}
-
-func InitializeScenario(ctx *godog.ScenarioContext) {
-	api := &apiFeature{}
-
-	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
-		api.resetResponse(sc)
-		return ctx, nil
-	})
-	ctx.Step(`^I send "(GET|POST|PUT|DELETE)" request to "([^"]*)"$`, api.iSendrequestTo)
-	ctx.Step(`^the response code should be (\d+)$`, api.theResponseCodeShouldBe)
-	ctx.Step(`^the response should match json:$`, api.theResponseShouldMatchJSON)
+	return "", fmt.Errorf("Format given in format parameter not supported: %s", formatParam)
 }
 ```
 
-**NOTE:** the `getVersion` handler is called on `/version` endpoint.
-Executing `godog run` or `go test -v` will provide `undefined: getVersion` error, so we actually need to implement it now.
-If we made some mistakes in step implementations, we will know about it when we run the tests.
 
-Though, we could also improve our `JSON` comparison function to range through the interfaces and
-match their types and values.
 
-In case if some router is used, you may search the handler based on the endpoint. Current example
-uses a standard http package.
+# Archive / Send in your results
+After our interview, for later review, please send us a copy of your results.
 
-### Step 5
+Please create a .zip archive of your '_example/api' folder, 
+remove the file extension, and try sending it to `simon.eck@dentsplysirona.com`.
 
-Finally, lets implement the `API` server:
 
-``` go
-// file: api.go
-// Example - demonstrates REST API server implementation tests.
-package main
 
-import (
-	"encoding/json"
-	"net/http"
 
-	"github.com/cucumber/godog"
-)
-
-func getVersion(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		fail(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	data := struct {
-		Version string `json:"version"`
-	}{Version: godog.Version}
-
-	ok(w, data)
-}
-
-// fail writes a json response with error msg and status header
-func fail(w http.ResponseWriter, msg string, status int) {
-	w.WriteHeader(status)
-
-	data := struct {
-		Error string `json:"error"`
-	}{Error: msg}
-	resp, _ := json.Marshal(data)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
-}
-
-// ok writes data to response with 200 status
-func ok(w http.ResponseWriter, data interface{}) {
-	resp, err := json.Marshal(data)
-	if err != nil {
-		fail(w, "Oops something evil has happened", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
-}
-
-func main() {
-	http.HandleFunc("/version", getVersion)
-	http.ListenAndServe(":8080", nil)
-}
-```
-
-The implementation details are clearly production ready and the imported **godog** package is only
-used to respond with the correct constant version number.
-
-### Step 6
-
-Run our tests to see whether everything is happening as we have expected: `go test -v`
-
-![Screenshot](https://raw.github.com/cucumber/godog/master/_examples/api/screenshots/passed.png)
-
-### Conclusions
-
-Hope you have enjoyed it like I did.
-
-Any developer (who is the target of our application) can read and remind himself about how API behaves.
