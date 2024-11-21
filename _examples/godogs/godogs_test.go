@@ -15,9 +15,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/cucumber/godog/_examples/godogs"
 	"os"
 	"testing"
+
+	"github.com/cucumber/godog/_examples/godogs"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -27,6 +28,8 @@ var opts = godog.Options{
 	Output:      colors.Colored(os.Stdout),
 	Concurrency: 4,
 }
+
+var lastError error
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &opts)
@@ -75,8 +78,18 @@ func thereAreGodogs(ctx context.Context, available int) {
 
 // Step definition can return error, context, context and error, or nothing.
 
+/**
 func iEat(ctx context.Context, num int) error {
 	return godogsFromContext(ctx).Eat(num)
+}**/
+
+func iEat(ctx context.Context, num int) error {
+	if num > godogsFromContext(ctx).Available() {
+		lastError = fmt.Errorf("cannot eat more godogs than available")
+		return nil
+	}
+	lastError = godogsFromContext(ctx).Eat(num)
+	return lastError
 }
 
 func thereShouldBeRemaining(ctx context.Context, remaining int) error {
@@ -90,6 +103,16 @@ func thereShouldBeRemaining(ctx context.Context, remaining int) error {
 
 func thereShouldBeNoneRemaining(ctx context.Context) error {
 	return thereShouldBeRemaining(ctx, 0)
+}
+
+func anErrorShouldOccurWithMessage(ctx context.Context, expectedErrorMessage string) error {
+	if lastError == nil {
+		return fmt.Errorf("expected an error but got none")
+	}
+	if lastError.Error() != expectedErrorMessage {
+		return fmt.Errorf("expected error message '%s' but got '%s'", expectedErrorMessage, lastError.Error())
+	}
+	return nil
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
@@ -106,4 +129,5 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I eat (\d+)$`, iEat)
 	ctx.Step(`^there should be (\d+) remaining$`, thereShouldBeRemaining)
 	ctx.Step(`^there should be none remaining$`, thereShouldBeNoneRemaining)
+	ctx.Step(`^an error should occur with message "([^"]*)"$`, anErrorShouldOccurWithMessage)
 }
