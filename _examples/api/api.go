@@ -46,10 +46,33 @@ func getTimeStampInRequiredFormat(w http.ResponseWriter, r *http.Request) {
 		t = time.Now()
 	}
 
+	// Validate format parameter if provided
+	validFormatParams := []string{
+		"2006-01-02",  // ISO 8601 date format
+		"02-Jan-2006", // Common date format
+		"Jan 2, 2006", // Another common date format
+		"02/01/2006",  // European date format
+		"01/02/2006",  // US date format
+		time.RFC3339,  // Include RFC3339
+	}
+
 	// If format parameter is not provided, use RFC3339
 	if formatParam == "" {
 		format = time.RFC3339
 	} else {
+		// Optional: Add format validation
+		formatValid := false
+		for _, validFormat := range validFormatParams {
+			if formatParam == validFormat {
+				formatValid = true
+				break
+			}
+		}
+
+		if !formatValid {
+			fail(w, "Unsupported format", http.StatusBadRequest)
+			return
+		}
 		format = formatParam
 	}
 
