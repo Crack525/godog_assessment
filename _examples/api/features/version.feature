@@ -19,6 +19,6 @@ Feature: get version
     And the response should match json:
       """
       {
-        "version": "go1.22.0"
+        "version": "go1.23.3"
       }
       """
